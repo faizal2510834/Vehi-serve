@@ -88,4 +88,67 @@ public class Validator {
         }
         return value;
     }
+
+    public static java.time.LocalDate validateDate(String dateStr, String fieldName) throws ValidationException {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            throw new ValidationException(fieldName + " cannot be empty.");
+        }
+        try {
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("uuuu-MM-dd")
+                    .withResolverStyle(java.time.format.ResolverStyle.STRICT);
+            return java.time.LocalDate.parse(dateStr.trim(), formatter);
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new ValidationException("Invalid " + fieldName + " format. Use yyyy-MM-dd and ensure the date is real.");
+        }
+    }
+
+    public static int validateOdometer(String odometerStr) throws ValidationException {
+        if (odometerStr == null || odometerStr.trim().isEmpty()) {
+            throw new ValidationException("Odometer reading cannot be empty.");
+        }
+        try {
+            int odometer = Integer.parseInt(odometerStr.trim());
+            if (odometer < 0) {
+                throw new ValidationException("Odometer reading cannot be negative.");
+            }
+            if (odometer > 9999999) {
+                throw new ValidationException("Odometer reading is unrealistically high.");
+            }
+            return odometer;
+        } catch (NumberFormatException e) {
+            throw new ValidationException("Odometer reading must be a whole number.");
+        }
+    }
+
+    public static java.math.BigDecimal validateCost(String costStr) throws ValidationException {
+        if (costStr == null || costStr.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            java.math.BigDecimal cost = new java.math.BigDecimal(costStr.trim());
+            if (cost.compareTo(java.math.BigDecimal.ZERO) < 0) {
+                throw new ValidationException("Cost cannot be negative.");
+            }
+            if (cost.scale() > 2) {
+                throw new ValidationException("Cost cannot have more than 2 decimal places.");
+            }
+            if (cost.precision() - cost.scale() > 10) {
+                throw new ValidationException("Cost value is too large.");
+            }
+            return cost;
+        } catch (NumberFormatException e) {
+            throw new ValidationException("Cost must be a valid number.");
+        }
+    }
+
+    public static String validateServiceString(String val, String fieldName, int maxLength) throws ValidationException {
+        if (val == null || val.trim().isEmpty()) {
+            return null;
+        }
+        val = val.trim();
+        if (val.length() > maxLength) {
+            throw new ValidationException(fieldName + " cannot exceed " + maxLength + " characters.");
+        }
+        return val;
+    }
 }

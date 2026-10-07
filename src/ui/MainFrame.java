@@ -21,6 +21,9 @@ public class MainFrame extends JFrame {
         VehiclePanel vehiclePanel = new VehiclePanel();
         tabbedPane.addTab("Vehicles", vehiclePanel);
         
+        ServicePanel servicePanel = new ServicePanel();
+        tabbedPane.addTab("Services", servicePanel);
+        
         tabbedPane.addChangeListener(e -> {
             int selectedIndex = tabbedPane.getSelectedIndex();
             if (selectedIndex != -1) {
