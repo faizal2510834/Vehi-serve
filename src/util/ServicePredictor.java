@@ -17,9 +17,18 @@ public class ServicePredictor {
         }
     }
 
-    public static Prediction predictNextService(String vehicleType, String condition, int manufactureYear, LocalDate serviceDate, int currentOdometer) {
-        if (vehicleType == null || condition == null || serviceDate == null || currentOdometer < 0) {
-            throw new IllegalArgumentException("Invalid input for prediction");
+    public static Prediction predictNextService(String vehicleType, String condition, int manufactureYear, LocalDate serviceDate, Integer currentOdometer) {
+        if (condition == null || condition.trim().isEmpty()) {
+            throw new IllegalArgumentException("Condition cannot be null or empty.");
+        }
+        if (serviceDate == null) {
+            throw new IllegalArgumentException("Service date cannot be null.");
+        }
+        if (currentOdometer == null || currentOdometer < 0) {
+            throw new IllegalArgumentException("Odometer must be non-null and non-negative.");
+        }
+        if (vehicleType == null) {
+            throw new IllegalArgumentException("Vehicle type cannot be null.");
         }
 
         double baseDays;

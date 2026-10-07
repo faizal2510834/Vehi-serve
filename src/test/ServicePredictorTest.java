@@ -80,14 +80,34 @@ public class ServicePredictorTest {
             System.out.println("Negative odometer: SUCCESS (" + e.getMessage() + ")");
         }
 
-        System.out.println("\n3. Age Derivation Tests");
+        try {
+            ServicePredictor.predictNextService("Two-Wheeler", "Good", 2010, serviceDate, null);
+            System.out.println("Null odometer: FAILED (no exception)");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Null odometer: SUCCESS (" + e.getMessage() + ")");
+        }
+
+        System.out.println("\n3. Floor value testing note");
+        System.out.println("Note: The 30-day/500km floor is currently unreachable. The lowest possible output with minimum factors (180 days * 0.6 * 0.9 = 97 days, 3000 km * 0.6 * 0.9 = 1620 km) is well above the floor.");
+
+        System.out.println("\n4. Age Derivation Tests");
         LocalDate testService = LocalDate.parse("2026-06-01");
         
         Prediction p1 = ServicePredictor.predictNextService("Two-Wheeler", "Good", 2015, testService, 100);
-        System.out.println("Mfg 2015, Serv 2026 -> Rule: " + p1.ruleUsed);
+        System.out.print("Mfg 2015, Serv 2026 -> Age 11: ");
+        if (p1.ruleUsed.contains("Age >= 11 yrs applied")) {
+             System.out.println("PASS (Age >= 11 yrs applied)");
+        } else {
+             System.out.println("FAIL (Age >= 11 yrs NOT applied)");
+        }
         
         Prediction p2 = ServicePredictor.predictNextService("Two-Wheeler", "Good", 2016, testService, 100);
-        System.out.println("Mfg 2016, Serv 2026 -> Rule: " + p2.ruleUsed);
+        System.out.print("Mfg 2016, Serv 2026 -> Age 10: ");
+        if (!p2.ruleUsed.contains("Age >= 11 yrs applied")) {
+             System.out.println("PASS (Age >= 11 yrs NOT applied)");
+        } else {
+             System.out.println("FAIL (Age >= 11 yrs applied)");
+        }
 
         System.out.println("--- AUTOMATED tests completed ---");
     }
