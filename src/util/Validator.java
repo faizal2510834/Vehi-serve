@@ -62,7 +62,7 @@ public class Validator {
         if (regNumber == null || regNumber.trim().isEmpty()) {
             throw new ValidationException("Registration number cannot be empty.");
         }
-        regNumber = regNumber.trim().toUpperCase();
+        regNumber = regNumber.replace(" ", "").replace("-", "").toUpperCase();
         if (regNumber.length() > 20) {
             throw new ValidationException("Registration number cannot exceed 20 characters.");
         }

@@ -25,6 +25,7 @@ public class VehicleDAOTest {
         int customerId2 = -1;
         int vehicleId1 = -1;
         int vehicleId2 = -1;
+        int dummyServiceId = -1;
 
         try {
             // Setup dummy customers
@@ -94,18 +95,49 @@ public class VehicleDAOTest {
                 System.out.println("7. Update to duplicate reg: SUCCESS (" + e.getMessage() + ")");
             }
 
-            // 8. Valid Delete
+            // 8. Delete blocked (ORA-02292)
+            try (Connection conn = DBConnection.getInstance().getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO SERVICE_RECORD (vehicle_id, service_date, odometer_km) VALUES (?, SYSDATE, 1000)", new String[]{"SERVICE_ID"})) {
+                pstmt.setInt(1, vehicleId1);
+                pstmt.executeUpdate();
+                try (java.sql.ResultSet rs = pstmt.getGeneratedKeys()) {
+                    if (rs.next()) dummyServiceId = rs.getInt(1);
+                }
+            }
+            try {
+                vehicleDAO.deleteVehicle(vehicleId1);
+                System.out.println("8. Delete blocked ORA-02292: FAILED (No exception)");
+            } catch (DatabaseException e) {
+                System.out.println("8. Delete blocked ORA-02292: SUCCESS (" + e.getMessage() + ")");
+            }
+
+            // Clean up dummy service record
+            if (dummyServiceId != -1) {
+                try (Connection conn = DBConnection.getInstance().getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("DELETE FROM SERVICE_RECORD WHERE service_id = ?")) {
+                    pstmt.setInt(1, dummyServiceId);
+                    pstmt.executeUpdate();
+                }
+            }
+
+            // 9. Valid Delete
             vehicleDAO.deleteVehicle(vehicleId1);
             vehicleId1 = -1; // Marked as deleted
             vehicleDAO.deleteVehicle(vehicleId2);
             vehicleId2 = -1; // Marked as deleted
-            System.out.println("8. Valid delete: SUCCESS");
+            System.out.println("9. Valid delete: SUCCESS");
 
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             // Failsafe cleanup ensuring everything is reverted even on crash
             try (Connection conn = DBConnection.getInstance().getConnection()) {
+                if (dummyServiceId != -1) {
+                    try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM SERVICE_RECORD WHERE service_id = ?")) {
+                        pstmt.setInt(1, dummyServiceId);
+                        pstmt.executeUpdate();
+                    }
+                }
                 if (vehicleId1 != -1) {
                     try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM VEHICLE WHERE vehicle_id = ?")) {
                         pstmt.setInt(1, vehicleId1);
