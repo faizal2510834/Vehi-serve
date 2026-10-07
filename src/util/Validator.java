@@ -51,4 +51,41 @@ public class Validator {
         }
         return address;
     }
+
+    public static void validateCustomerId(int customerId) throws ValidationException {
+        if (customerId <= 0) {
+            throw new ValidationException("No customer selected.");
+        }
+    }
+
+    public static String validateRegNumber(String regNumber) throws ValidationException {
+        if (regNumber == null || regNumber.trim().isEmpty()) {
+            throw new ValidationException("Registration number cannot be empty.");
+        }
+        regNumber = regNumber.trim().toUpperCase();
+        if (regNumber.length() > 20) {
+            throw new ValidationException("Registration number cannot exceed 20 characters.");
+        }
+        if (!regNumber.matches("^[A-Z0-9]+$")) {
+            throw new ValidationException("Registration number can only contain letters and digits.");
+        }
+        return regNumber;
+    }
+
+    public static void validateManufactureYear(int year) throws ValidationException {
+        if (year < 1980 || year > 2100) {
+            throw new ValidationException("Manufacture year must be between 1980 and 2100.");
+        }
+    }
+
+    public static String validateMakeModel(String value, String fieldName) throws ValidationException {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        value = value.trim();
+        if (value.length() > 50) {
+            throw new ValidationException(fieldName + " cannot exceed 50 characters.");
+        }
+        return value;
+    }
 }

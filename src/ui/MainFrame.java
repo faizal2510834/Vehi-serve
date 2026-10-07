@@ -18,6 +18,19 @@ public class MainFrame extends JFrame {
         // Add tabs
         tabbedPane.addTab("Customers", new CustomerPanel());
         
+        VehiclePanel vehiclePanel = new VehiclePanel();
+        tabbedPane.addTab("Vehicles", vehiclePanel);
+        
+        tabbedPane.addChangeListener(e -> {
+            int selectedIndex = tabbedPane.getSelectedIndex();
+            if (selectedIndex != -1) {
+                String tabName = tabbedPane.getTitleAt(selectedIndex);
+                if ("Vehicles".equals(tabName)) {
+                    vehiclePanel.loadCustomers();
+                }
+            }
+        });
+        
         add(tabbedPane);
     }
 }
