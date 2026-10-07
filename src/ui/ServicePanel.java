@@ -43,6 +43,8 @@ public class ServicePanel extends BasePanel {
     private JButton saveButton;
     private JButton deleteButton;
     private JButton clearButton;
+    private JButton suggestButton;
+    private JLabel ruleLabel;
 
     private VehicleDAO vehicleDAO;
     private CustomerDAO customerDAO;
@@ -171,6 +173,18 @@ public class ServicePanel extends BasePanel {
         nextServiceKmField = new JTextField(15);
         panel.add(nextServiceKmField, gbc);
 
+        gbc.gridx = 2; gbc.gridy = row;
+        suggestButton = new JButton("Suggest Next Service");
+        suggestButton.addActionListener(e -> suggestNextService());
+        panel.add(suggestButton, gbc);
+
+        row++;
+        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 4;
+        ruleLabel = new JLabel(" ");
+        ruleLabel.setForeground(Color.BLUE);
+        panel.add(ruleLabel, gbc);
+        gbc.gridwidth = 1;
+
         row++;
         gbc.gridx = 0; gbc.gridy = row;
         panel.add(new JLabel("Work Done:"), gbc);
@@ -207,6 +221,7 @@ public class ServicePanel extends BasePanel {
 
         saveButton.setEnabled(false);
         deleteButton.setEnabled(false);
+        suggestButton.setEnabled(false);
 
         btnPanel.add(saveButton);
         btnPanel.add(deleteButton);
@@ -216,6 +231,34 @@ public class ServicePanel extends BasePanel {
         panel.add(btnPanel, gbc);
 
         return panel;
+    }
+
+    private void suggestNextService() {
+        if (currentVehicle == null) return;
+        
+        LocalDate serviceDate;
+        int odometer;
+        try {
+            serviceDate = Validator.validateDate(serviceDateField.getText(), "Service Date");
+            odometer = Validator.validateOdometer(odometerField.getText());
+        } catch (ValidationException ex) {
+            showInfo("Please enter a valid Service Date and Odometer before suggesting next service.");
+            return;
+        }
+
+        if (!nextServiceDateField.getText().trim().isEmpty() || !nextServiceKmField.getText().trim().isEmpty()) {
+            if (!confirm("Next service fields are already filled. Overwrite them?")) {
+                return;
+            }
+        }
+
+        String condition = (String) conditionCombo.getSelectedItem();
+        util.ServicePredictor.Prediction p = util.ServicePredictor.predictNextService(
+            currentVehicle.getVehicleType(), condition, currentVehicle.getManufactureYear(), serviceDate, odometer);
+
+        nextServiceDateField.setText(p.nextDate.toString());
+        nextServiceKmField.setText(String.valueOf(p.nextKm));
+        ruleLabel.setText(p.ruleUsed);
     }
 
     private void findVehicle() {
@@ -238,6 +281,7 @@ public class ServicePanel extends BasePanel {
             
             loadHistory();
             saveButton.setEnabled(true);
+            suggestButton.setEnabled(true);
             
         } catch (ValidationException | DatabaseException ex) {
             showError(ex.getMessage());
@@ -274,6 +318,7 @@ public class ServicePanel extends BasePanel {
         tableModel.setRowCount(0);
         clearForm();
         saveButton.setEnabled(false);
+        suggestButton.setEnabled(false);
     }
 
     private void clearForm() {
@@ -287,6 +332,7 @@ public class ServicePanel extends BasePanel {
         nextServiceDateField.setText("");
         nextServiceKmField.setText("");
         remarksArea.setText("");
+        ruleLabel.setText(" ");
         
         historyTable.clearSelection();
         selectedServiceId = -1;
