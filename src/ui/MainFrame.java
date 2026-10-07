@@ -24,6 +24,9 @@ public class MainFrame extends JFrame {
         ServicePanel servicePanel = new ServicePanel();
         tabbedPane.addTab("Services", servicePanel);
         
+        SearchPanel searchPanel = new SearchPanel();
+        tabbedPane.addTab("History Search", searchPanel);
+        
         tabbedPane.addChangeListener(e -> {
             int selectedIndex = tabbedPane.getSelectedIndex();
             if (selectedIndex != -1) {

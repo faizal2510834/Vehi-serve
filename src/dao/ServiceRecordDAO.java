@@ -162,4 +162,74 @@ public class ServiceRecordDAO {
         }
         return records;
     }
+
+    public List<model.ServiceHistoryRow> searchFullHistory(String keyword) throws DatabaseException {
+        List<model.ServiceHistoryRow> results = new ArrayList<>();
+        String sql = "SELECT s.service_date, v.reg_number, v.make || ' ' || v.model AS make_model, " +
+                     "c.name, c.phone, s.service_type, s.odometer_km, s.cost, s.next_service_date, s.next_service_km, " +
+                     "s.work_done, s.parts_replaced, s.remarks " +
+                     "FROM SERVICE_RECORD s " +
+                     "INNER JOIN VEHICLE v ON s.vehicle_id = v.vehicle_id " +
+                     "INNER JOIN CUSTOMER c ON v.customer_id = c.customer_id ";
+                     
+        boolean hasFilter = keyword != null && !keyword.trim().isEmpty();
+        if (hasFilter) {
+            sql += "WHERE UPPER(c.name) LIKE ? ESCAPE '\\' " +
+                   "OR UPPER(c.phone) LIKE ? ESCAPE '\\' " +
+                   "OR REPLACE(REPLACE(UPPER(v.reg_number), '-', ''), ' ', '') LIKE ? ESCAPE '\\' " +
+                   "OR UPPER(s.service_type) LIKE ? ESCAPE '\\' ";
+        }
+        
+        sql += "ORDER BY s.service_date DESC, s.service_id DESC " +
+               "FETCH FIRST 500 ROWS ONLY";
+
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             
+            if (hasFilter) {
+                String escapedKw = keyword.replace("\\", "\\\\")
+                                          .replace("%", "\\%")
+                                          .replace("_", "\\_");
+                String likeKw = "%" + escapedKw.toUpperCase() + "%";
+                String strippedRegLike = "%" + escapedKw.replace(" ", "").replace("-", "").toUpperCase() + "%";
+                
+                pstmt.setString(1, likeKw);
+                pstmt.setString(2, likeKw);
+                pstmt.setString(3, strippedRegLike);
+                pstmt.setString(4, likeKw);
+            }
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    java.sql.Date nextSqlDate = rs.getDate("next_service_date");
+                    LocalDate nextDate = nextSqlDate != null ? nextSqlDate.toLocalDate() : null;
+                    
+                    Integer nextKm = null;
+                    int nKm = rs.getInt("next_service_km");
+                    if (!rs.wasNull()) {
+                        nextKm = nKm;
+                    }
+                    
+                    results.add(new model.ServiceHistoryRow(
+                        rs.getDate("service_date").toLocalDate(),
+                        rs.getString("reg_number"),
+                        rs.getString("make_model"),
+                        rs.getString("name"),
+                        rs.getString("phone"),
+                        rs.getString("service_type"),
+                        rs.getInt("odometer_km"),
+                        rs.getBigDecimal("cost"),
+                        nextDate,
+                        nextKm,
+                        rs.getString("work_done"),
+                        rs.getString("parts_replaced"),
+                        rs.getString("remarks")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            throw new DatabaseException("Failed to search history: " + e.getMessage());
+        }
+        return results;
+    }
 }

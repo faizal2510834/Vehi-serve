@@ -102,6 +102,38 @@ public class Validator {
         }
     }
 
+    public static java.time.LocalDate validateServiceDate(String input) throws ValidationException {
+        java.time.LocalDate date = validateDate(input, "Service Date");
+        if (date.isAfter(java.time.LocalDate.now())) {
+            throw new ValidationException("Service date cannot be in the future.");
+        }
+        return date;
+    }
+
+    public static java.time.LocalDate validateNextServiceDate(String input, java.time.LocalDate serviceDate) throws ValidationException {
+        if (input == null || input.trim().isEmpty()) return null;
+        java.time.LocalDate nextDate = validateDate(input, "Next Service Date");
+        if (nextDate.isBefore(serviceDate)) {
+            throw new ValidationException("Next service date cannot be before the current service date.");
+        }
+        return nextDate;
+    }
+
+    public static Integer validateNextServiceKm(String input, int currentOdometer) throws ValidationException {
+        if (input == null || input.trim().isEmpty()) return null;
+        int nextKm = validateOdometer(input);
+        if (nextKm <= currentOdometer) {
+            throw new ValidationException("Next service KM must be greater than current odometer reading.");
+        }
+        return nextKm;
+    }
+
+    public static void validateNextServiceFields(java.time.LocalDate nextDate, Integer nextKm) throws ValidationException {
+        if (nextDate == null && nextKm == null) {
+            throw new ValidationException("Please provide either Next Service Date or Next Service KM.");
+        }
+    }
+
     public static int validateOdometer(String odometerStr) throws ValidationException {
         if (odometerStr == null || odometerStr.trim().isEmpty()) {
             throw new ValidationException("Odometer reading cannot be empty.");
@@ -111,8 +143,8 @@ public class Validator {
             if (odometer < 0) {
                 throw new ValidationException("Odometer reading cannot be negative.");
             }
-            if (odometer > 9999999) {
-                throw new ValidationException("Odometer reading is unrealistically high.");
+            if (odometer > 2000000) {
+                throw new ValidationException("Odometer reading cannot exceed 2,000,000.");
             }
             return odometer;
         } catch (NumberFormatException e) {

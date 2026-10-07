@@ -343,10 +343,7 @@ public class ServicePanel extends BasePanel {
         if (currentVehicle == null) return;
         
         try {
-            LocalDate serviceDate = Validator.validateDate(serviceDateField.getText(), "Service Date");
-            if (serviceDate.isAfter(LocalDate.now())) {
-                throw new ValidationException("Service date cannot be in the future.");
-            }
+            LocalDate serviceDate = Validator.validateServiceDate(serviceDateField.getText());
 
             int odometer = Validator.validateOdometer(odometerField.getText());
             int latestOdometer = serviceDAO.getLatestOdometer(currentVehicle.getVehicleId());
@@ -360,26 +357,11 @@ public class ServicePanel extends BasePanel {
             String cond = (String) conditionCombo.getSelectedItem();
             BigDecimal cost = Validator.validateCost(costField.getText());
             
-            LocalDate nextDate = null;
-            if (!nextServiceDateField.getText().trim().isEmpty()) {
-                nextDate = Validator.validateDate(nextServiceDateField.getText(), "Next Service Date");
-                if (nextDate.isBefore(serviceDate)) {
-                    throw new ValidationException("Next service date cannot be before the current service date.");
-                }
-            }
-            
-            Integer nextKm = null;
-            if (!nextServiceKmField.getText().trim().isEmpty()) {
-                nextKm = Validator.validateOdometer(nextServiceKmField.getText());
-                if (nextKm <= odometer) {
-                    throw new ValidationException("Next service KM must be greater than current odometer reading.");
-                }
-            }
+            LocalDate nextDate = Validator.validateNextServiceDate(nextServiceDateField.getText(), serviceDate);
+            Integer nextKm = Validator.validateNextServiceKm(nextServiceKmField.getText(), odometer);
 
             // Require at least one next service prediction
-            if (nextDate == null && nextKm == null) {
-                throw new ValidationException("Please provide either Next Service Date or Next Service KM.");
-            }
+            Validator.validateNextServiceFields(nextDate, nextKm);
 
             String work = Validator.validateServiceString(workDoneArea.getText(), "Work Done", 500);
             String parts = Validator.validateServiceString(partsReplacedArea.getText(), "Parts Replaced", 500);

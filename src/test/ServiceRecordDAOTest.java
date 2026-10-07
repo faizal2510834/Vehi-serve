@@ -57,17 +57,14 @@ public class ServiceRecordDAOTest {
             try { Validator.validateDate("10-10-2023", "Date"); System.out.println("3b. Wrong date format: FAILED"); } catch (ValidationException e) { System.out.println("3b. Wrong date format: SUCCESS (" + e.getMessage() + ")"); }
             
             LocalDate futureDate = LocalDate.now().plusDays(10);
-            if (futureDate.isAfter(LocalDate.now())) {
-                System.out.println("3c. Future service date logic: SUCCESS (futureDate " + futureDate + " is after today)");
-            }
+            try { Validator.validateServiceDate(futureDate.toString()); System.out.println("3c. Future service date logic: FAILED"); } catch (ValidationException e) { System.out.println("3c. Future service date logic: SUCCESS (" + e.getMessage() + ")"); }
             
             LocalDate nextDate = LocalDate.parse("2022-12-31");
-            if (nextDate.isBefore(sr1.getServiceDate())) {
-                System.out.println("3d. Next date < Service date logic: SUCCESS (nextDate " + nextDate + " is before service date " + sr1.getServiceDate() + ")");
-            }
+            try { Validator.validateNextServiceDate(nextDate.toString(), sr1.getServiceDate()); System.out.println("3d. Next date < Service date logic: FAILED"); } catch (ValidationException e) { System.out.println("3d. Next date < Service date logic: SUCCESS (" + e.getMessage() + ")"); }
             
             try { Validator.validateOdometer("-100"); System.out.println("3e. Negative odometer: FAILED"); } catch (ValidationException e) { System.out.println("3e. Negative odometer: SUCCESS (" + e.getMessage() + ")"); }
             try { Validator.validateOdometer("100.5"); System.out.println("3f. Fractional odometer: FAILED"); } catch (ValidationException e) { System.out.println("3f. Fractional odometer: SUCCESS (" + e.getMessage() + ")"); }
+            try { Validator.validateOdometer("2000001"); System.out.println("3f2. Odometer > 2M: FAILED"); } catch (ValidationException e) { System.out.println("3f2. Odometer > 2M: SUCCESS (" + e.getMessage() + ")"); }
             try { Validator.validateCost("-50"); System.out.println("3g. Negative cost: FAILED"); } catch (ValidationException e) { System.out.println("3g. Negative cost: SUCCESS (" + e.getMessage() + ")"); }
             try { Validator.validateCost("10.999"); System.out.println("3h. Cost 10.999: FAILED"); } catch (ValidationException e) { System.out.println("3h. Cost 10.999: SUCCESS (" + e.getMessage() + ")"); }
             
@@ -76,15 +73,9 @@ public class ServiceRecordDAOTest {
 
             int currentOdo = 5000;
             int nextOdo = 4000;
-            if (nextOdo <= currentOdo) {
-                System.out.println("3j. Next KM <= Odometer logic: SUCCESS (next " + nextOdo + " <= current " + currentOdo + ")");
-            }
+            try { Validator.validateNextServiceKm(String.valueOf(nextOdo), currentOdo); System.out.println("3j. Next KM <= Odometer logic: FAILED"); } catch (ValidationException e) { System.out.println("3j. Next KM <= Odometer logic: SUCCESS (" + e.getMessage() + ")"); }
 
-            Integer nullNextKm = null;
-            LocalDate nullNextDate = null;
-            if (nullNextKm == null && nullNextDate == null) {
-                System.out.println("3k. Neither next-service field given logic: SUCCESS (both are null)");
-            }
+            try { Validator.validateNextServiceFields(null, null); System.out.println("3k. Neither next-service field given logic: FAILED"); } catch (ValidationException e) { System.out.println("3k. Neither next-service field given logic: SUCCESS (" + e.getMessage() + ")"); }
 
             // getLatestOdometer test
             int latestOdo = serviceDAO.getLatestOdometer(vehicleId);
