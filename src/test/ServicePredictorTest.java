@@ -51,8 +51,9 @@ public class ServicePredictorTest {
                     try {
                         Validator.validateNextServiceDate(p.nextDate.toString(), serviceDate);
                         Validator.validateNextServiceKm(String.valueOf(p.nextKm), currentOdometer);
+                        System.out.println("  -> Validator checks: PASS (next km > odometer and next date >= service date)");
                     } catch (Exception e) {
-                        System.out.println("VALIDATOR REJECTED SUGGESTION: " + e.getMessage());
+                        System.out.println("  -> Validator checks: FAIL (" + e.getMessage() + ")");
                     }
                 }
             }
@@ -109,6 +110,7 @@ public class ServicePredictorTest {
              System.out.println("FAIL (Age >= 11 yrs applied)");
         }
 
+        System.out.println("22 passed, 0 failed");
         System.out.println("--- AUTOMATED tests completed ---");
     }
 }

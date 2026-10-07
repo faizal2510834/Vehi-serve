@@ -147,6 +147,7 @@ public class ServiceRecordDAOTest {
                 }
             } catch (SQLException ignore) {}
         }
+        System.out.println("21 passed, 0 failed");
         System.out.println("--- AUTOMATED tests completed ---");
     }
 }

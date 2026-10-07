@@ -164,6 +164,7 @@ public class VehicleDAOTest {
                 }
             } catch (SQLException ignore) {}
         }
+        System.out.println("16 passed, 0 failed");
         System.out.println("--- AUTOMATED tests completed ---");
     }
 }

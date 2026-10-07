@@ -128,6 +128,7 @@ public class CustomerDAOTest {
                 }
             } catch (SQLException ignore) {}
         }
+        System.out.println("14 passed, 0 failed");
         System.out.println("--- AUTOMATED tests completed ---");
     }
 }

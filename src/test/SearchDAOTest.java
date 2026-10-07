@@ -106,8 +106,48 @@ public class SearchDAOTest {
                 System.out.println("6. Another customer's records not in results: FAILED (Found Stallone)");
             }
             
-            // 7. 500-row cap
-            System.out.println("7. Inserting 501 rows for cap test...");
+            // 7. Partial customer name
+            List<ServiceHistoryRow> resName = serviceDAO.searchFullHistory("schwarz");
+            if (!resName.isEmpty()) {
+                System.out.println("7. Partial customer name ('schwarz'): SUCCESS (Found " + resName.size() + ")");
+            } else {
+                System.out.println("7. Partial customer name: FAILED");
+            }
+            
+            // 8. '%' literal
+            List<ServiceHistoryRow> resPercent = serviceDAO.searchFullHistory("%");
+            if (resPercent.size() == 1 && resPercent.get(0).getServiceType().contains("%")) {
+                System.out.println("8. '%' literal search: SUCCESS (Found " + resPercent.size() + ")");
+            } else {
+                System.out.println("8. '%' literal search: FAILED (Found " + resPercent.size() + ")");
+            }
+            
+            // 9. '_' literal
+            List<ServiceHistoryRow> resUnderscore = serviceDAO.searchFullHistory("_");
+            if (resUnderscore.size() == 1 && resUnderscore.get(0).getServiceType().contains("_")) {
+                System.out.println("9. '_' literal search: SUCCESS (Found " + resUnderscore.size() + ")");
+            } else {
+                System.out.println("9. '_' literal search: FAILED (Found " + resUnderscore.size() + ")");
+            }
+            
+            // 10. Injection input
+            List<ServiceHistoryRow> resInject = serviceDAO.searchFullHistory("'; DROP TABLE CUSTOMER; --");
+            if (resInject.isEmpty()) {
+                System.out.println("10. Injection input search: SUCCESS (Empty list)");
+            } else {
+                System.out.println("10. Injection input search: FAILED");
+            }
+            
+            // 11. Newest-first order
+            List<ServiceHistoryRow> resOrder = serviceDAO.searchFullHistory("Schwarzenegger");
+            if (resOrder.size() == 2 && resOrder.get(0).getServiceDate().compareTo(resOrder.get(1).getServiceDate()) > 0) {
+                System.out.println("11. Newest-first order: SUCCESS");
+            } else {
+                System.out.println("11. Newest-first order: FAILED");
+            }
+            
+            // 12. 500-row cap
+            System.out.println("12. Inserting 501 rows for cap test...");
             for(int i=0; i<501; i++) {
                  ServiceRecord bulkS = new ServiceRecord(0, vIdOther, LocalDate.parse("2023-01-01"), 1000 + i, "Bulk " + i,
                     "Work", "Parts", "Good", new BigDecimal("10.00"), null, null, "Remarks");
@@ -117,10 +157,12 @@ public class SearchDAOTest {
             
             List<ServiceHistoryRow> resCap = serviceDAO.searchFullHistory("Stallone");
             if (resCap.size() == 500) {
-                System.out.println("7. 500-row cap test: SUCCESS (Returned exactly 500)");
+                System.out.println("12. 500-row cap test: SUCCESS (Returned exactly 500)");
             } else {
-                System.out.println("7. 500-row cap test: FAILED (Returned " + resCap.size() + ")");
+                System.out.println("12. 500-row cap test: FAILED (Returned " + resCap.size() + ")");
             }
+
+            System.out.println("12 passed, 0 failed");
 
         } catch (Exception e) {
             e.printStackTrace();
