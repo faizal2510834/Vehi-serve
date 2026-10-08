@@ -73,8 +73,9 @@ public class Validator {
     }
 
     public static void validateManufactureYear(int year) throws ValidationException {
-        if (year < 1980 || year > 2100) {
-            throw new ValidationException("Manufacture year must be between 1980 and 2100.");
+        int maxYear = java.time.Year.now().getValue() + 1;
+        if (year < 1980 || year > maxYear) {
+            throw new ValidationException("Manufacture year must be between 1980 and " + maxYear + ".");
         }
     }
 

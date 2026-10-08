@@ -26,6 +26,8 @@ public class VehicleDAOTest {
         int vehicleId1 = -1;
         int vehicleId2 = -1;
         int dummyServiceId = -1;
+        int vIdMaxAllowed = -1;
+        int vIdMinAllowed = -1;
 
         try {
             // Setup dummy customers
@@ -55,6 +57,29 @@ public class VehicleDAOTest {
             // 3. Validations
             try { Validator.validateManufactureYear(1979); System.out.println("3a. Year too low: FAILED"); } catch (ValidationException e) { System.out.println("3a. Year too low: SUCCESS (" + e.getMessage() + ")"); }
             try { Validator.validateManufactureYear(2101); System.out.println("3b. Year too high: FAILED"); } catch (ValidationException e) { System.out.println("3b. Year too high: SUCCESS (" + e.getMessage() + ")"); }
+            
+            int currentYear = java.time.Year.now().getValue();
+            try { Validator.validateManufactureYear(2099); System.out.println("3_new1. Year 2099: FAILED"); } catch (ValidationException e) { System.out.println("3_new1. Year 2099: SUCCESS (" + e.getMessage() + ")"); }
+            try { Validator.validateManufactureYear(currentYear + 2); System.out.println("3_new2. Year current+2: FAILED"); } catch (ValidationException e) { System.out.println("3_new2. Year current+2: SUCCESS (" + e.getMessage() + ")"); }
+            
+            try {
+                Vehicle vTest = new Vehicle(0, customerId1, "MAXYEAR", "Two-Wheeler", "T1", "M1", currentYear + 1, "Petrol");
+                Validator.validateManufactureYear(vTest.getManufactureYear());
+                vIdMaxAllowed = vehicleDAO.addVehicle(vTest);
+                System.out.println("3_new3. Year current+1 accepted (DAO): SUCCESS (ID " + vIdMaxAllowed + ")");
+            } catch (Exception e) {
+                System.out.println("3_new3. Year current+1 accepted (DAO): FAILED (" + e.getMessage() + ")");
+            }
+
+            try {
+                Vehicle vTest = new Vehicle(0, customerId1, "MINYEAR", "Two-Wheeler", "T2", "M2", 1980, "Petrol");
+                Validator.validateManufactureYear(vTest.getManufactureYear());
+                vIdMinAllowed = vehicleDAO.addVehicle(vTest);
+                System.out.println("3_new4. Year 1980 accepted (DAO): SUCCESS (ID " + vIdMinAllowed + ")");
+            } catch (Exception e) {
+                System.out.println("3_new4. Year 1980 accepted (DAO): FAILED (" + e.getMessage() + ")");
+            }
+
             try { Validator.validateRegNumber(""); System.out.println("3c. Empty reg: FAILED"); } catch (ValidationException e) { System.out.println("3c. Empty reg: SUCCESS (" + e.getMessage() + ")"); }
             try { Validator.validateRegNumber("ABCDEFGHIJKLMNOPQRSTU"); System.out.println("3d. Over-length reg: FAILED"); } catch (ValidationException e) { System.out.println("3d. Over-length reg: SUCCESS (" + e.getMessage() + ")"); }
             try { Validator.validateCustomerId(0); System.out.println("3e. No customer: FAILED"); } catch (ValidationException e) { System.out.println("3e. No customer: SUCCESS (" + e.getMessage() + ")"); }
@@ -150,6 +175,18 @@ public class VehicleDAOTest {
                         pstmt.executeUpdate();
                     }
                 }
+                if (vIdMaxAllowed != -1) {
+                    try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM VEHICLE WHERE vehicle_id = ?")) {
+                        pstmt.setInt(1, vIdMaxAllowed);
+                        pstmt.executeUpdate();
+                    }
+                }
+                if (vIdMinAllowed != -1) {
+                    try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM VEHICLE WHERE vehicle_id = ?")) {
+                        pstmt.setInt(1, vIdMinAllowed);
+                        pstmt.executeUpdate();
+                    }
+                }
                 if (customerId1 != -1) {
                     try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM CUSTOMER WHERE customer_id = ?")) {
                         pstmt.setInt(1, customerId1);
@@ -164,7 +201,7 @@ public class VehicleDAOTest {
                 }
             } catch (SQLException ignore) {}
         }
-        System.out.println("16 passed, 0 failed");
+        System.out.println("20 passed, 0 failed");
         System.out.println("--- AUTOMATED tests completed ---");
     }
 }
