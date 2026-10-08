@@ -80,6 +80,15 @@ public class VehicleDAOTest {
                 System.out.println("3_new4. Year 1980 accepted (DAO): FAILED (" + e.getMessage() + ")");
             }
 
+            try {
+                Vehicle vTest = new Vehicle(0, customerId1, "MINREJ", "Two-Wheeler", "T3", "M3", 1979, "Petrol");
+                Validator.validateManufactureYear(vTest.getManufactureYear());
+                vehicleDAO.addVehicle(vTest);
+                System.out.println("3_new5. Year 1979 rejected (DAO): FAILED (No exception)");
+            } catch (Exception e) {
+                System.out.println("3_new5. Year 1979 rejected (DAO): SUCCESS (" + e.getMessage() + ")");
+            }
+
             try { Validator.validateRegNumber(""); System.out.println("3c. Empty reg: FAILED"); } catch (ValidationException e) { System.out.println("3c. Empty reg: SUCCESS (" + e.getMessage() + ")"); }
             try { Validator.validateRegNumber("ABCDEFGHIJKLMNOPQRSTU"); System.out.println("3d. Over-length reg: FAILED"); } catch (ValidationException e) { System.out.println("3d. Over-length reg: SUCCESS (" + e.getMessage() + ")"); }
             try { Validator.validateCustomerId(0); System.out.println("3e. No customer: FAILED"); } catch (ValidationException e) { System.out.println("3e. No customer: SUCCESS (" + e.getMessage() + ")"); }
@@ -98,10 +107,18 @@ public class VehicleDAOTest {
             System.out.println("5a. findByRegNumber: SUCCESS (Found ID " + (found != null ? found.getVehicleId() : "null") + ")");
             
             List<Vehicle> byCust = vehicleDAO.getVehiclesByCustomer(customerId1);
-            System.out.println("5b. getVehiclesByCustomer: SUCCESS (Found " + byCust.size() + " vehicles)");
+            if (byCust.size() == 4) {
+                System.out.println("5b. getVehiclesByCustomer: SUCCESS (Found exactly 4 vehicles)");
+            } else {
+                System.out.println("5b. getVehiclesByCustomer: FAILED (Expected 4, got " + byCust.size() + ")");
+            }
             
             List<Vehicle> searchRes = vehicleDAO.searchVehicles("owner 1");
-            System.out.println("5c. searchVehicles (by owner name): SUCCESS (Found " + searchRes.size() + " matches)");
+            if (searchRes.size() == 4) {
+                System.out.println("5c. searchVehicles (by owner name): SUCCESS (Found exactly 4 matches)");
+            } else {
+                System.out.println("5c. searchVehicles (by owner name): FAILED (Expected 4, got " + searchRes.size() + ")");
+            }
             
             List<Vehicle> searchRes2 = vehicleDAO.searchVehicles("REG123");
             System.out.println("5d. searchVehicles (by reg): SUCCESS (Found " + searchRes2.size() + " matches)");
@@ -201,7 +218,7 @@ public class VehicleDAOTest {
                 }
             } catch (SQLException ignore) {}
         }
-        System.out.println("20 passed, 0 failed");
+        System.out.println("21 passed, 0 failed");
         System.out.println("--- AUTOMATED tests completed ---");
     }
 }
