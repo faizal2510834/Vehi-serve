@@ -308,7 +308,7 @@ The schema is defined in `db/schema.sql`. Three tables, no cascade deletes.
 | vehicle_type | VARCHAR2(20) | NOT NULL, CHECK IN ('Two-Wheeler', 'Four-Wheeler') |
 | make | VARCHAR2(50) | — |
 | model | VARCHAR2(50) | — |
-| manufacture_year | NUMBER | CHECK BETWEEN 1980 AND 2100 |
+| manufacture_year | NUMBER | chk_manufacture_year CHECK BETWEEN 1980 AND 2100 |
 | fuel_type | VARCHAR2(20) | — |
 
 ### SERVICE_RECORD
@@ -323,7 +323,7 @@ The schema is defined in `db/schema.sql`. Three tables, no cascade deletes.
 | work_done | VARCHAR2(500) | — |
 | parts_replaced | VARCHAR2(500) | — |
 | vehicle_condition | VARCHAR2(20) | CHECK IN ('Good', 'Average', 'Poor', 'Critical') |
-| cost | NUMBER | CHECK ≥ 0 |
+| cost | NUMBER | chk_cost CHECK ≥ 0 (nullable) |
 | next_service_date | DATE | — |
 | next_service_km | NUMBER | — |
 | remarks | VARCHAR2(500) | — |
@@ -353,13 +353,18 @@ have **no** database-level CHECK constraint:
 ```
 vehiServe/
 ├── .gitignore                  # Ignores bin/, config/db.properties, *.class, sources.txt
+├── README.md                   # Project documentation
 ├── compile.bat                 # Compiles all .java files into bin/
 ├── run.bat                     # Runs Main class with ojdbc11.jar on classpath
 ├── config/
 │   ├── db.properties.example   # Template: copy to db.properties and fill in password
 │   └── db.properties           # (git-ignored) your local database credentials
 ├── db/
-│   └── schema.sql              # CREATE TABLE statements (drops existing tables first)
+│   ├── schema.sql              # CREATE TABLE statements (drops existing tables first)
+│   └── verify.sql              # Verification script
+├── docs/
+│   └── screenshots/
+│       └── .gitkeep            # Placeholder for screenshots
 ├── lib/
 │   └── ojdbc11.jar             # Oracle JDBC driver (Oracle Database 21c)
 └── src/
@@ -377,7 +382,6 @@ vehiServe/
     │   ├── Vehicle.java        # Vehicle POJO
     │   ├── ServiceRecord.java  # ServiceRecord POJO
     │   └── ServiceHistoryRow.java  # Read-only row for search results (joins 3 tables)
-    ├── service/                # (empty — reserved for future business logic)
     ├── test/
     │   ├── CustomerDAOTest.java       # 14 automated tests
     │   ├── VehicleDAOTest.java        # 21 automated tests
@@ -403,8 +407,7 @@ vehiServe/
 
 ### Prerequisites
 
-- **JDK 17** (or later). Verified with OpenJDK Temurin 17.0.16.
-  The project uses `ojdbc11.jar`, which requires JDK 11 or later.
+- **JDK 17** (or later). Verified with Temurin 17.0.16; JDK 11 or later should work (not tested).
 - **Oracle Database 21c Express Edition (XE)** with the pluggable database
   `XEPDB1` running.
 - **SQL\*Plus** (ships with Oracle XE).
@@ -429,6 +432,8 @@ ALTER USER vsms QUOTA UNLIMITED ON USERS;
 > real passwords to the repository.
 
 ### Step 2: Create the Tables
+
+> **WARNING:** `db/schema.sql` drops the existing CUSTOMER, VEHICLE and SERVICE_RECORD tables, so running it deletes all data.
 
 ```
 sqlplus vsms@//localhost:1521/XEPDB1
@@ -483,6 +488,9 @@ Starting Connection Test...
 Configuration loaded successfully.
 Connection established successfully!
 Database Product Name: Oracle
+Database Product Version: 
+Oracle Database 21c Express Edition Release 21.0.0.0.0 - Production
+Version 21.3.0.0.0
 ```
 
 ### Step 6: Run the Application
@@ -510,13 +518,11 @@ against the live database.
 Each test class can be compiled and run individually. Below are both
 PowerShell and cmd forms.
 
+Run `.\compile.bat` first (it also compiles the tests). Then run:
+
 **PowerShell:**
 
 ```powershell
-# Compile all tests (if not already compiled)
-javac -cp 'src;lib\ojdbc11.jar' -d bin (Get-ChildItem -Recurse src\*.java).FullName
-
-# Run each test
 java -cp 'bin;lib\ojdbc11.jar' test.CustomerDAOTest
 java -cp 'bin;lib\ojdbc11.jar' test.VehicleDAOTest
 java -cp 'bin;lib\ojdbc11.jar' test.ServiceRecordDAOTest
@@ -527,19 +533,10 @@ java -cp 'bin;lib\ojdbc11.jar' test.SearchDAOTest
 **cmd:**
 
 ```cmd
-javac -cp "src;lib\ojdbc11.jar" -d bin src\test\CustomerDAOTest.java
 java -cp "bin;lib\ojdbc11.jar" test.CustomerDAOTest
-
-javac -cp "src;lib\ojdbc11.jar" -d bin src\test\VehicleDAOTest.java
 java -cp "bin;lib\ojdbc11.jar" test.VehicleDAOTest
-
-javac -cp "src;lib\ojdbc11.jar" -d bin src\test\ServiceRecordDAOTest.java
 java -cp "bin;lib\ojdbc11.jar" test.ServiceRecordDAOTest
-
-javac -cp "src;lib\ojdbc11.jar" -d bin src\test\ServicePredictorTest.java
 java -cp "bin;lib\ojdbc11.jar" test.ServicePredictorTest
-
-javac -cp "src;lib\ojdbc11.jar" -d bin src\test\SearchDAOTest.java
 java -cp "bin;lib\ojdbc11.jar" test.SearchDAOTest
 ```
 
@@ -602,12 +599,18 @@ manually:
 
 Your password in `config/db.properties` does not match the database user.
 Double-check the password you set when creating the `vsms` user.
+To fix a locked or incorrect password, connect as system using:
+```
+sqlplus system@//localhost:1521/XEPDB1
+```
+Run `ALTER SESSION SET CONTAINER = XEPDB1;` and check `SHOW CON_NAME` says `XEPDB1`. Then run:
+```sql
+ALTER USER vsms IDENTIFIED BY "YOUR_PASSWORD_HERE" ACCOUNT UNLOCK;
+```
 
 ### ORA-12154: TNS: could not resolve the connect identifier
 
-The `db.url` in `config/db.properties` cannot reach the database. Check
-that Oracle XE is running and that the URL matches your setup
-(`jdbc:oracle:thin:@//localhost:1521/XEPDB1`).
+This means the SQL*Plus connect identifier is malformed. Use exactly `//localhost:1521/XEPDB1` (two slashes, no password inside it).
 
 ### Wrong Container: Connected to CDB$ROOT Instead of XEPDB1
 
