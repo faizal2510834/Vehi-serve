@@ -709,8 +709,9 @@ Screenshots are stored in `docs/screenshots/` and should be added manually.
 
 ## Credits
 
-- **Author:** TODO
-- **Course:** TODO
-- **Institution:** TODO
+- **Author:** Faizal ,Eniya Sree ,Elamathi ,Gokul Prasath
+- **Course:** Object Oriented Programming Using JAVA
+- **Institution:** SSN College Of Engineering ,Kalavakkam ,Chennai
+- **Department:** Information Technology
 
 ---
