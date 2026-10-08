@@ -9,6 +9,7 @@ import model.Vehicle;
 import util.Validator;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
@@ -160,7 +161,7 @@ public class VehiclePanel extends BasePanel {
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBorder(BorderFactory.createTitledBorder("Registered Vehicles"));
 
-        String[] columns = {"ID", "Owner ID", "Reg Number", "Type", "Make", "Model", "Year", "Fuel"};
+        String[] columns = {"S.No", "ID", "Owner ID", "Reg Number", "Type", "Make", "Model", "Year", "Fuel"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -169,6 +170,13 @@ public class VehiclePanel extends BasePanel {
         };
 
         vehicleTable = new JTable(tableModel);
+
+        DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+        rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
+        vehicleTable.getColumnModel().getColumn(0).setCellRenderer(rightRenderer);
+        vehicleTable.getColumnModel().getColumn(0).setMaxWidth(50);
+        vehicleTable.getColumnModel().getColumn(0).setPreferredWidth(40);
+
         vehicleTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && vehicleTable.getSelectedRow() != -1) {
                 populateFormFromSelection();
@@ -214,8 +222,10 @@ public class VehiclePanel extends BasePanel {
             try {
                 tableModel.setRowCount(0);
                 List<Vehicle> vehicles = vehicleDAO.getAllVehicles();
+                int sno = 1;
                 for (Vehicle v : vehicles) {
                     tableModel.addRow(new Object[]{
+                            sno++,
                             v.getVehicleId(),
                             v.getCustomerId(),
                             v.getRegNumber(),
@@ -235,8 +245,8 @@ public class VehiclePanel extends BasePanel {
     private void populateFormFromSelection() {
         int row = vehicleTable.getSelectedRow();
         if (row != -1) {
-            selectedVehicleId = (int) tableModel.getValueAt(row, 0);
-            int customerId = (int) tableModel.getValueAt(row, 1);
+            selectedVehicleId = (int) tableModel.getValueAt(row, 1);
+            int customerId = (int) tableModel.getValueAt(row, 2);
             
             // Set customer
             try {
@@ -264,12 +274,12 @@ public class VehiclePanel extends BasePanel {
                 showError("Could not load customer: " + ex.getMessage());
             }
 
-            regNumberField.setText((String) tableModel.getValueAt(row, 2));
-            vehicleTypeCombo.setSelectedItem(tableModel.getValueAt(row, 3));
-            makeField.setText(tableModel.getValueAt(row, 4) == null ? "" : (String) tableModel.getValueAt(row, 4));
-            modelField.setText(tableModel.getValueAt(row, 5) == null ? "" : (String) tableModel.getValueAt(row, 5));
-            yearField.setText(String.valueOf(tableModel.getValueAt(row, 6)));
-            fuelTypeCombo.setSelectedItem(tableModel.getValueAt(row, 7));
+            regNumberField.setText((String) tableModel.getValueAt(row, 3));
+            vehicleTypeCombo.setSelectedItem(tableModel.getValueAt(row, 4));
+            makeField.setText(tableModel.getValueAt(row, 5) == null ? "" : (String) tableModel.getValueAt(row, 5));
+            modelField.setText(tableModel.getValueAt(row, 6) == null ? "" : (String) tableModel.getValueAt(row, 6));
+            yearField.setText(String.valueOf(tableModel.getValueAt(row, 7)));
+            fuelTypeCombo.setSelectedItem(tableModel.getValueAt(row, 8));
 
             saveButton.setEnabled(false);
             updateButton.setEnabled(true);

@@ -7,6 +7,7 @@ import model.Customer;
 import util.Validator;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
@@ -92,7 +93,7 @@ public class CustomerPanel extends BasePanel {
     }
 
     private void initTable() {
-        String[] columns = {"ID", "Name", "Phone", "Email", "Address"};
+        String[] columns = {"S.No", "ID", "Name", "Phone", "Email", "Address"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -100,15 +101,22 @@ public class CustomerPanel extends BasePanel {
             }
         };
         customerTable = new JTable(tableModel);
+
+        DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+        rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
+        customerTable.getColumnModel().getColumn(0).setCellRenderer(rightRenderer);
+        customerTable.getColumnModel().getColumn(0).setMaxWidth(50);
+        customerTable.getColumnModel().getColumn(0).setPreferredWidth(40);
+
         customerTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && customerTable.getSelectedRow() != -1) {
                 int row = customerTable.getSelectedRow();
-                txtId.setText(tableModel.getValueAt(row, 0).toString());
-                txtName.setText(tableModel.getValueAt(row, 1).toString());
-                txtPhone.setText(tableModel.getValueAt(row, 2).toString());
-                Object email = tableModel.getValueAt(row, 3);
+                txtId.setText(tableModel.getValueAt(row, 1).toString());
+                txtName.setText(tableModel.getValueAt(row, 2).toString());
+                txtPhone.setText(tableModel.getValueAt(row, 3).toString());
+                Object email = tableModel.getValueAt(row, 4);
                 txtEmail.setText(email != null ? email.toString() : "");
-                Object address = tableModel.getValueAt(row, 4);
+                Object address = tableModel.getValueAt(row, 5);
                 txtAddress.setText(address != null ? address.toString() : "");
             }
         });
@@ -122,9 +130,10 @@ public class CustomerPanel extends BasePanel {
         try {
             tableModel.setRowCount(0);
             List<Customer> customers = customerDAO.getAllCustomers();
+            int sno = 1;
             for (Customer c : customers) {
                 tableModel.addRow(new Object[]{
-                    c.getCustomerId(), c.getName(), c.getPhone(), c.getEmail(), c.getAddress()
+                    sno++, c.getCustomerId(), c.getName(), c.getPhone(), c.getEmail(), c.getAddress()
                 });
             }
         } catch (DatabaseException e) {
