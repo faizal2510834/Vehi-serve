@@ -15,7 +15,11 @@ import java.util.List;
 
 public class VehiclePanel extends BasePanel {
 
-    private JComboBox<CustomerItem> customerCombo;
+    private JTextField phoneSearchField;
+    private JButton findButton;
+    private JLabel ownerNameLabel;
+    private Customer selectedCustomer;
+    private boolean isProgrammaticPhoneUpdate = false;
     private JTextField regNumberField;
     private JComboBox<String> vehicleTypeCombo;
     private JTextField makeField;
@@ -47,7 +51,6 @@ public class VehiclePanel extends BasePanel {
         add(tablePanel, BorderLayout.CENTER);
 
         loadVehicles();
-        loadCustomers();
     }
 
     private JPanel createFormPanel() {
@@ -59,10 +62,33 @@ public class VehiclePanel extends BasePanel {
 
         // Row 1
         gbc.gridx = 0; gbc.gridy = 0;
-        formPanel.add(new JLabel("Owner:"), gbc);
+        formPanel.add(new JLabel("Owner Phone:"), gbc);
         gbc.gridx = 1; gbc.gridy = 0;
-        customerCombo = new JComboBox<>();
-        formPanel.add(customerCombo, gbc);
+        
+        JPanel searchPanel = new JPanel(new BorderLayout(5, 0));
+        phoneSearchField = new JTextField(10);
+        findButton = new JButton("Find");
+        searchPanel.add(phoneSearchField, BorderLayout.CENTER);
+        searchPanel.add(findButton, BorderLayout.EAST);
+        
+        JPanel ownerPanel = new JPanel(new BorderLayout());
+        ownerPanel.add(searchPanel, BorderLayout.NORTH);
+        ownerNameLabel = new JLabel(" ");
+        ownerPanel.add(ownerNameLabel, BorderLayout.SOUTH);
+        formPanel.add(ownerPanel, gbc);
+        
+        findButton.addActionListener(e -> executePhoneSearch());
+        phoneSearchField.addActionListener(e -> executePhoneSearch());
+        phoneSearchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { checkClear(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { checkClear(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { checkClear(); }
+            private void checkClear() {
+                if (!isProgrammaticPhoneUpdate) {
+                    clearCustomerSelection();
+                }
+            }
+        });
 
         gbc.gridx = 2; gbc.gridy = 0;
         formPanel.add(new JLabel("Reg Number:"), gbc);
@@ -153,19 +179,34 @@ public class VehiclePanel extends BasePanel {
         return tablePanel;
     }
 
-    public void loadCustomers() {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                customerCombo.removeAllItems();
-                customerCombo.addItem(new CustomerItem(-1, "Select Customer", ""));
-                List<Customer> customers = customerDAO.getAllCustomers();
-                for (Customer c : customers) {
-                    customerCombo.addItem(new CustomerItem(c.getCustomerId(), c.getName(), c.getPhone()));
-                }
-            } catch (DatabaseException ex) {
-                showError("Failed to load customers: " + ex.getMessage());
+    public void searchByPhone(String phone) {
+        isProgrammaticPhoneUpdate = true;
+        phoneSearchField.setText(phone);
+        isProgrammaticPhoneUpdate = false;
+        executePhoneSearch();
+    }
+
+    private void executePhoneSearch() {
+        String phone = phoneSearchField.getText();
+        try {
+            phone = Validator.validatePhone(phone);
+            Customer customer = customerDAO.findByPhone(phone);
+            if (customer != null) {
+                selectedCustomer = customer;
+                ownerNameLabel.setText(customer.getName() + " - " + customer.getPhone());
+            } else {
+                showInfo("Customer not found");
+                clearCustomerSelection();
             }
-        });
+        } catch (ValidationException | DatabaseException ex) {
+            showError(ex.getMessage());
+            clearCustomerSelection();
+        }
+    }
+
+    private void clearCustomerSelection() {
+        selectedCustomer = null;
+        ownerNameLabel.setText(" ");
     }
 
     private void loadVehicles() {
@@ -197,12 +238,30 @@ public class VehiclePanel extends BasePanel {
             selectedVehicleId = (int) tableModel.getValueAt(row, 0);
             int customerId = (int) tableModel.getValueAt(row, 1);
             
-            // Set customer combo
-            for (int i = 0; i < customerCombo.getItemCount(); i++) {
-                if (customerCombo.getItemAt(i).customerId == customerId) {
-                    customerCombo.setSelectedIndex(i);
-                    break;
+            // Set customer
+            try {
+                List<Customer> all = customerDAO.getAllCustomers();
+                Customer found = null;
+                for (Customer c : all) {
+                    if (c.getCustomerId() == customerId) {
+                        found = c;
+                        break;
+                    }
                 }
+                if (found != null) {
+                    selectedCustomer = found;
+                    isProgrammaticPhoneUpdate = true;
+                    phoneSearchField.setText(found.getPhone());
+                    isProgrammaticPhoneUpdate = false;
+                    ownerNameLabel.setText(found.getName() + " - " + found.getPhone());
+                } else {
+                    clearCustomerSelection();
+                    isProgrammaticPhoneUpdate = true;
+                    phoneSearchField.setText("");
+                    isProgrammaticPhoneUpdate = false;
+                }
+            } catch (DatabaseException ex) {
+                showError("Could not load customer: " + ex.getMessage());
             }
 
             regNumberField.setText((String) tableModel.getValueAt(row, 2));
@@ -220,7 +279,10 @@ public class VehiclePanel extends BasePanel {
 
     private void clearForm() {
         selectedVehicleId = -1;
-        customerCombo.setSelectedIndex(0);
+        isProgrammaticPhoneUpdate = true;
+        phoneSearchField.setText("");
+        isProgrammaticPhoneUpdate = false;
+        clearCustomerSelection();
         regNumberField.setText("");
         vehicleTypeCombo.setSelectedIndex(0);
         makeField.setText("");
@@ -236,8 +298,7 @@ public class VehiclePanel extends BasePanel {
     }
 
     private Vehicle getVehicleFromForm() throws ValidationException {
-        CustomerItem selectedCustomer = (CustomerItem) customerCombo.getSelectedItem();
-        int customerId = selectedCustomer != null ? selectedCustomer.customerId : -1;
+        int customerId = selectedCustomer != null ? selectedCustomer.getCustomerId() : -1;
         Validator.validateCustomerId(customerId);
 
         String regNumber = Validator.validateRegNumber(regNumberField.getText());
@@ -307,22 +368,4 @@ public class VehiclePanel extends BasePanel {
         }
     }
 
-    // Wrapper class for JComboBox items
-    private static class CustomerItem {
-        int customerId;
-        String name;
-        String phone;
-
-        public CustomerItem(int customerId, String name, String phone) {
-            this.customerId = customerId;
-            this.name = name;
-            this.phone = phone;
-        }
-
-        @Override
-        public String toString() {
-            if (customerId == -1) return name; // "Select Customer"
-            return name + " - " + phone;
-        }
-    }
 }

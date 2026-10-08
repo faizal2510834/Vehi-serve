@@ -28,6 +28,11 @@ public class CustomerPanel extends BasePanel {
     private DefaultTableModel tableModel;
     
     private CustomerDAO customerDAO;
+    private MainFrame mainFrame;
+
+    public void setMainFrame(MainFrame mainFrame) {
+        this.mainFrame = mainFrame;
+    }
 
     public CustomerPanel() {
         customerDAO = new CustomerDAO();
@@ -136,7 +141,8 @@ public class CustomerPanel extends BasePanel {
             
             Customer c = new Customer();
             c.setName(Validator.validateName(txtName.getText()));
-            c.setPhone(Validator.validatePhone(txtPhone.getText()));
+            String phone = Validator.validatePhone(txtPhone.getText());
+            c.setPhone(phone);
             c.setEmail(Validator.validateEmail(txtEmail.getText()));
             c.setAddress(Validator.validateAddress(txtAddress.getText()));
             
@@ -144,6 +150,16 @@ public class CustomerPanel extends BasePanel {
             showInfo("Customer saved successfully! Generated ID: " + newId);
             clearForm();
             loadTableData();
+
+            if (mainFrame != null) {
+                SwingUtilities.invokeLater(() -> {
+                    try {
+                        mainFrame.switchToVehiclesAndSearch(phone);
+                    } catch (Exception ex) {
+                        // Ignore and stay on Customers tab if hand-off fails
+                    }
+                });
+            }
         } catch (ValidationException | DatabaseException e) {
             showError(e.getMessage());
         }

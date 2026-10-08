@@ -2,6 +2,7 @@ package ui;
 
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
+import java.awt.Component;
 
 public class MainFrame extends JFrame {
 
@@ -16,7 +17,9 @@ public class MainFrame extends JFrame {
         tabbedPane = new JTabbedPane();
         
         // Add tabs
-        tabbedPane.addTab("Customers", new CustomerPanel());
+        CustomerPanel customerPanel = new CustomerPanel();
+        customerPanel.setMainFrame(this);
+        tabbedPane.addTab("Customers", customerPanel);
         
         VehiclePanel vehiclePanel = new VehiclePanel();
         tabbedPane.addTab("Vehicles", vehiclePanel);
@@ -28,15 +31,22 @@ public class MainFrame extends JFrame {
         tabbedPane.addTab("History Search", searchPanel);
         
         tabbedPane.addChangeListener(e -> {
-            int selectedIndex = tabbedPane.getSelectedIndex();
-            if (selectedIndex != -1) {
-                String tabName = tabbedPane.getTitleAt(selectedIndex);
-                if ("Vehicles".equals(tabName)) {
-                    vehiclePanel.loadCustomers();
-                }
-            }
+            // Keep listener if we need it later, but remove loadCustomers() since combo box is gone
         });
         
         add(tabbedPane);
+    }
+
+    public void switchToVehiclesAndSearch(String phone) {
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if ("Vehicles".equals(tabbedPane.getTitleAt(i))) {
+                tabbedPane.setSelectedIndex(i);
+                Component comp = tabbedPane.getComponentAt(i);
+                if (comp instanceof VehiclePanel) {
+                    ((VehiclePanel) comp).searchByPhone(phone);
+                }
+                break;
+            }
+        }
     }
 }
